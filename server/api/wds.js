@@ -72,9 +72,6 @@ router.post('/checkAnswer', function (req, res, next) {
     // show answer, update aliveCount and analysis
     let board = boardInstance
     let analysis = board.analysis
-    if (analysis === undefined) {
-      analysis = question.choices
-    }
     if (!question.isMultipleChoice) {
       if (analysis[choice].count === undefined) {
         analysis[choice].count = 0
@@ -311,7 +308,7 @@ router.post('/setQuestion', (req, res) => {
       rightChoice: question.rightChoice,
       answer: question.answer,
       showAnalysis: false,
-      analysis: null
+      analysis: question.choices
     })
   })
   res.json({
@@ -348,19 +345,9 @@ router.post('/showAnalysis', (req, res) => {
   if (req.body.option && req.body.option === 'true') {
     option = true
   }
-
-  let analysis = boardInstance.analysis
-  if (!analysis || analysis.length === 0) {
-    analysis = boardInstance.question.choices
-    wdRefs.board.update({
-      showAnalysis: option,
-      analysis
-    })
-  } else {
-    wdRefs.board.update({
-      showAnalysis: option
-    })
-  }
+  wdRefs.board.update({
+    showAnalysis: option
+  })
   res.send({
     code: 'success'
   })
