@@ -167,55 +167,30 @@ router.post('/enterGame', function (req, res) {
     console.log(user)
 
     console.log(board.startTime, new Date(board.startTime), ts, new Date(board.startTime) > ts)
-    // if (new Date(board.startTime) > ts) {
-    //   userRef.update({ // reset user
-    //     actionAskRecovery: false,
-    //     actionAskQuest: false,
-    //     isAlive: true,
-    //     // isQuest 0,1,-1 未参与，参与并正确，参与失败
-    //     hasRecovery: false,
-    //     gotTokens: 0
-    //   })
-    //
-    //   let userIds = board.userIds
-    //   if (userIds === undefined) {
-    //     userIds = []
-    //   }
-    //   if (userIds.indexOf(userId) === -1) {
-    //     userIds.push(userId)
-    //   }
-    //
-    //   wdRefs.board.update({
-    //     userIds,
-    //     aliveCount: userIds.length
-    //   })
-    // } else {
-    //   // do nothing
-    //   console.error('game already started')
-    // }
-
-    userRef.update({ // reset user
-      actionAskRecovery: false,
-      actionAskQuest: false,
-      isAlive: true,
-      // isQuest 0,1,-1 未参与，参与并正确，参与失败
-      hasRecovery: false,
-      gotTokens: 0,
-      submitAnswerState: -1 // [-1: not start, 0:new question, 1: hasSubmit]
-    })
-
-    let userIds = board.userIds
-    if (userIds === undefined) {
-      userIds = []
+    if (new Date(board.startTime) > ts) {
+      userRef.update({ // reset user
+        actionAskRecovery: false,
+        actionAskQuest: false,
+        isAlive: true,
+        hasRecovery: false,
+        gotTokens: 0,
+        submitAnswerState: -1
+      })
+      let userIds = board.userIds
+      if (userIds === undefined) {
+        userIds = []
+      }
+      if (userIds.indexOf(userId) === -1) {
+        userIds.push(userId)
+      }
+      wdRefs.board.update({
+        userIds,
+        aliveCount: userIds.length
+      })
+    } else {
+      // do nothing
+      console.error('game already started')
     }
-    if (userIds.indexOf(userId) === -1) {
-      userIds.push(userId)
-    }
-
-    wdRefs.board.update({
-      userIds,
-      aliveCount: userIds.length
-    })
   }).catch(console.error)
   res.json({
     code: 'success'
@@ -258,7 +233,7 @@ router.post('/resetBoard', function (req, res) {
   if (!boardData) {
     boardData = {
       aliveCount: 0,
-      analysis: {},
+      analysis: null,
       answer: '',
       rightChoice: '',
       startTime: new Date().toJSON(),
@@ -336,7 +311,7 @@ router.post('/setQuestion', (req, res) => {
       rightChoice: question.rightChoice,
       answer: question.answer,
       showAnalysis: false,
-      analysis: {}
+      analysis: null
     })
   })
   res.json({
@@ -348,7 +323,7 @@ router.post('/endGame', (req, res) => {
   // 如下用户获得奖励！！！
   wdRefs.board.update({
     hasEnd: true,
-    analysis: {},
+    analysis: null,
     answer: '',
     rightChoice: '',
     tip: 'End of Game',
@@ -373,9 +348,19 @@ router.post('/showAnalysis', (req, res) => {
   if (req.body.option && req.body.option === 'true') {
     option = true
   }
-  wdRefs.board.update({
-    showAnalysis: option
-  })
+
+  let analysis = boardInstance.analysis
+  if (analysis === undefined) {
+    analysis = boardInstance.question.choices
+    wdRefs.board.update({
+      showAnalysis: option,
+      analysis
+    })
+  } else {
+    wdRefs.board.update({
+      showAnalysis: option
+    })
+  }
   res.send({
     code: 'success'
   })
