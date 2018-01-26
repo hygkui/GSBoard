@@ -350,7 +350,7 @@ router.post('/showAnalysis', (req, res) => {
   }
 
   let analysis = boardInstance.analysis
-  if (analysis === undefined) {
+  if (!analysis || analysis.length === 0) {
     analysis = boardInstance.question.choices
     wdRefs.board.update({
       showAnalysis: option,
