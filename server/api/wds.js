@@ -30,20 +30,26 @@ router.post('/checkAnswer', function (req, res, next) {
   wdRefs.project.child(questionId).once('value').then(function (snapshot) {
     console.info(snapshot.val())
     question = snapshot.val()
-    if (question.rightAnswer === choice) {
+    if (question.rightChoice.toString() === choice.toString()) {
       // if right
+      wdRefs.users.child(userId).update({ // die but ask recovery
+        submitAnswerState: 1
+      })
     } else {
       // if wrong
       wdRefs.users.child(userId).once('value').then(function (snapshot) {
         let user = snapshot.val()
-        if (user.recoveryCards && user.recoveryCards.length > 0 && !user.hasRecovery) {
+        if (user.recoveryCards && user.recoveryCards.length > 0) {
           wdRefs.users.child(userId).update({ // die but ask recovery
             isAlive: false,
-            actionAskRecovery: true
+            actionAskRecovery: true,
+            submitAnswerState: 1
           })
         } else { // die 
           wdRefs.users.child(userId).update({
-            isAlive: false
+            isAlive: false,
+            actionAskRecovery: false,
+            submitAnswerState: 1
           })
         }
       }).catch(console.error)
@@ -65,23 +71,22 @@ router.post('/checkAnswer', function (req, res, next) {
     }
     // show answer, update aliveCount and analysis
     let board = boardInstance
-    console.log(board)
     let analysis = board.analysis
     if (analysis === undefined) {
-      analysis = {}
+      analysis = question.choices
     }
-    if (analysis[choice] === undefined) {
-      analysis[choice] = 0
+    if (!question.isMultipleChoice) {
+      if (analysis[choice].count === undefined) {
+        analysis[choice].count = 0
+      }
+      analysis[choice].count++
+    } else { // radio choice
+      // not finished. for multiple choice
     }
-    analysis[choice]++
     console.log({
-      rightChoice: question.rightAnswer,
-      answer: question.answer,
       analysis: analysis
     })
     wdRefs.board.update({
-      rightChoice: question.rightAnswer,
-      answer: question.answer,
       analysis: analysis
     })
   })
@@ -195,7 +200,8 @@ router.post('/enterGame', function (req, res) {
       isAlive: true,
       // isQuest 0,1,-1 未参与，参与并正确，参与失败
       hasRecovery: false,
-      gotTokens: 0
+      gotTokens: 0,
+      submitAnswerState: -1 // [-1: not start, 0:new question, 1: hasSubmit]
     })
 
     let userIds = board.userIds
@@ -216,13 +222,29 @@ router.post('/enterGame', function (req, res) {
   })
 })
 
+router.post('/exitGame', (req, res) => {
+  let userId = req.body.userId
+  let userIds = boardInstance.userIds
+  if (userIds.indexOf(userId) !== -1) {
+    userIds.splice(userIds.indexOf(userId), 1)
+  }
+  wdRefs.board.update({
+    aliveCount: userIds.length,
+    userIds
+  })
+  res.json({
+    code: 'success'
+  })
+})
+
 /** create question
  * POST {question} 
  */
 router.post('/pushQuestion', function (req, res) {
   console.log('pushQuestion')
-  let { questionId, questionData } = req.body
-  wdRefs.project.child(questionId).set(questionData)
+  let { questionData } = req.body
+  console.log('questionData', questionData)
+  wdRefs.project.push(questionData, console.log)
   res.json({
     code: 'success'
   })
@@ -245,6 +267,7 @@ router.post('/resetBoard', function (req, res) {
       question: null,
       rightAnswer: '',
       hasEnd: false,
+      showAnalysis: false,
       totalRewardTokens: 10000
     }
   } else {
@@ -283,6 +306,13 @@ router.post('/startStopTime', function (req, res) {
       clearInterval(stoper)
     }
   }, step)
+  // set all the alive users's state hasSubmitAnswer to 0
+  let userIds = boardInstance.userIds
+  userIds.map(function (userId) {
+    wdRefs.users.child(userId).update({
+      submitAnswerState: 0
+    })
+  })
   res.json({
     code: 'success'
   })
@@ -300,26 +330,13 @@ router.post('/setQuestion', (req, res) => {
       question: {
         title: question.title,
         choices: question.choices,
-        questionId
+        questionId,
+        isMultipleChoice: question.isMultipleChoice
       },
-      rightAnswer: null,
-      answer: null,
+      rightChoice: question.rightChoice,
+      answer: question.answer,
+      showAnalysis: false,
       analysis: {}
-    })
-  })
-  res.json({
-    code: 'success'
-  })
-})
-
-router.post('/showAnswerAndRightChoice', (req, res) => {
-  let questionId = req.body.questionId
-  // get qId ref
-  wdRefs.project.child(questionId).once('value').then(function (snapchat) {
-    let question = snapchat.val()
-    wdRefs.board.update({
-      rightAnswer: question.rightAnswer,
-      answer: question.answer
     })
   })
   res.json({
@@ -336,7 +353,8 @@ router.post('/endGame', (req, res) => {
     rightChoice: '',
     tip: 'End of Game',
     question: null,
-    rightAnswer: ''
+    rightAnswer: '',
+    showAnalysis: false
   })
 
   let totalRewardTokens = parseInt(boardInstance.totalRewardTokens, 10)
@@ -347,6 +365,19 @@ router.post('/endGame', (req, res) => {
     wdRefs.users.child(userId).update({
       gotTokens
     })
+  })
+})
+
+router.post('/showAnalysis', (req, res) => {
+  let option = false
+  if (req.body.option && req.body.option === 'true') {
+    option = true
+  }
+  wdRefs.board.update({
+    showAnalysis: option
+  })
+  res.send({
+    code: 'success'
   })
 })
 
