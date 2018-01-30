@@ -3,83 +3,73 @@
         <img src="~assets/img/logo.png" style="height: 60px; width: 60px;" alt="Nuxt.js Logo" class="logo" />
         <br>
         <span>TimeLine for The Game</span>
-        <h1 class="title">
-            我的游戏，我来主宰
-        </h1>
+        <h2 class="title">
+            冲顶游戏控制台
+        </h2>
         <div style="display: block;">
             <button @click="resetBoard()">重置游戏</button>
 
             <br>
 
-            <div style="display:block; margin: 10px; border: 1px solid green; width: 100%; clear: both;">
-              类型：{{ question.isMultipleChoice ? '多选' : '单选'}} 
-              <button @click="question.isMultipleChoice = !question.isMultipleChoice">切换类型</button>
-              <br>
-              title<input type="text" placeholder="input question text" v-model="question.title">
-              <br>
-              answer<input type="text" placeholder="input question text" v-model="question.answer">
-               <br>
-              <input type="text" placeholder="input question choice" v-model="tempChoice"  v-on:keyup.enter="addChoice">
-              <button @click="addChoice">Add choice</button>
-
-              <ul style="display: inline;">
-                <li v-for="(choice, index) in question.choices" :key="index">
-                  <span v-if="choice.isRight">【✔️】</span>
-                  {{ choice.text }} 
-                  <button @click="question.choices.splice(index, 1)">X</button>
-                  <button @click="toggleRightChoice(index)">{{ choice.isRight ? '取消正确答案标记' : '标记为正确答案' }}</button>
-                </li>
-              </ul>
-              <br>
-
-              <p style="color: red;">
-                {{ question }}
-              </p>
-              <button @click="pushQuestion">添加题目到题库</button>
-            </div>
+            
 
             <input type="text" placeholder="input tip text" v-model="tipText">
             <button @click="setTip">发布公告</button>
             <br>
 
-            <button @click="setQuestion('-L3kqmVCNJesCBlA8yXK')">设置题目1</button>
-            <button @click="startStopTime(10)">开始倒计时10s</button>
-            <button @click="showAnalysis('true')">显示答案与答题统计</button>
+            <div style="background-color: gray; text-align: left;">
+              <ul>
+                <li v-for="(q, index) in questions" :key="q.title">{{ q.title }} 
+                  <button @click="add2SelectedQuestions(index)">添加到备选题目中</button>
+                </li>
+              </ul>
+            </div>
 
-            <br>
+            <div style="background-color: yellow; text-align: left;">
+              <p>共{{ selectedQuestions.length }}道题目</p>
+              <ul>
+                <li v-for="(sq, index) in selectedQuestions">
+                第{{ index+1 }}道题目:
+                {{ sq.title }}
+                <button @click="removeFromSelectedQuestions(index)">从备选题目中删除</button>
+                </li>
+              </ul>
+            </div>
 
-            <button @click="setQuestion('-L3kqzToY7r2oyv9V1QT')">设置题目2</button>
-            <button @click="startStopTime(10)">开始倒计时10s</button>
-            <button @click="showAnalysis('true')">显示答案与答题统计</button>
-
-
-            <br>
-
-            <button @click="setQuestion('-L3kr8d81ZWv5gaKcZKl')">设置题目3</button>
-            <button @click="startStopTime(10)">开始倒计时10s</button>
-            <button @click="showAnalysis('true')">显示答案与答题统计</button>
-
-            <br>
-
-            <button @click="setQuestion('-L3krL74X7MXNpEp8vjU')">设置题目4</button>
-            <button @click="startStopTime(10)">开始倒计时10s</button>
-            <button @click="showAnalysis('true')">显示答案与答题统计</button>
-
-            <br>
-
-            <button @click="setQuestion('-L3kr_OmQm2J8UxvbjV4')">设置题目5</button>
-            <button @click="startStopTime(10)">开始倒计时10s</button>
-            <button @click="showAnalysis('true')">显示答案与答题统计</button>
-            <br>
-
-            <button @click="setQuestion('-L3kt_0rDSuap8G6EQsv')">设置题目6</button>
-            <button @click="startStopTime(10)">开始倒计时10s</button>
-            <button @click="showAnalysis('true')">显示答案与答题统计</button>
-            <br>
-
+            
+            <button v-for="(sq, index) in selectedQuestions" @click="exeSetSelectedQeustion(sq.id)">
+              执行题目{{ index + 1 }}
+            </button>
+            
             <button @click="endGame()">打扫战场</button>
         </div>
 
+        <div style="display:block; margin: 10px; border: 1px solid green; width: 100%; clear: both;">
+          类型：{{ question.isMultipleChoice ? '多选' : '单选'}} 
+          <button @click="question.isMultipleChoice = !question.isMultipleChoice">切换类型</button>
+          <br>
+          选择题题目内容：<input type="text" placeholder="" v-model="question.title">
+          <br>
+          答案解析：<input type="text" placeholder="" v-model="question.answer">
+            <br>
+          <input type="text" placeholder="选项内容" v-model="tempChoice"  v-on:keyup.enter="addChoice">
+          <button @click="addChoice">增加选项</button>
+
+          <ul style="display: inline;">
+            <li v-for="(choice, index) in question.choices" :key="index">
+              <span v-if="choice.isRight">【✔️】</span>
+              {{ choice.text }} 
+              <button @click="question.choices.splice(index, 1)">X</button>
+              <button @click="toggleRightChoice(index)">{{ choice.isRight ? '取消正确答案标记' : '标记为正确答案' }}</button>
+            </li>
+          </ul>
+          <br>
+
+          <p style="color: red;">
+            {{ question }}
+          </p>
+          <button @click="pushQuestion">添加题目到题库</button>
+        </div>
 
         <div style="background-color: gray;">
             {{ board }}
@@ -91,7 +81,9 @@
     import axios from '~/plugins/axios'
     import Wilddog from 'wilddog'
 
-    let boardRef = Wilddog.initializeApp({ syncURL: 'https://kuafu.wilddogio.com/' }).sync().ref('/board')
+    let rootWDRef = Wilddog.initializeApp({ syncURL: 'https://kuafu.wilddogio.com/' }).sync()
+    let boardRef = rootWDRef.ref('/board')
+    let questionsRef = rootWDRef.ref('/project')
 
     export default {
       async asyncData () {
@@ -116,7 +108,9 @@
             isMultipleChoice: false
           },
           tempChoice: '',
-          rightChoices: []
+          rightChoices: [],
+          questions: [],
+          selectedQuestions: []
         }
       },
       methods: {
@@ -127,6 +121,12 @@
             })
             this.tipText = ''
           }
+        },
+        add2SelectedQuestions (index) {
+          this.selectedQuestions.push(this.questions[index])
+        },
+        removeFromSelectedQuestions (index) {
+          this.selectedQuestions.splice(index, 1)
         },
         addChoice () {
           this.question.choices.push({
@@ -156,6 +156,14 @@
             })
             this.resetQuestion()
           }
+        },
+        async exeSetSelectedQeustion (id) {
+          this.setQuestion(id)
+          this.startStopTime(15)
+          let that = this
+          setTimeout(() => {
+            that.showAnalysis('true')
+          }, 15 * 1000)
         },
         resetQuestion () {
           this.question = {
@@ -197,12 +205,6 @@
             questionId
           })
         },
-        async showAnswerAndRightChoice (questionId) {
-          console.log('showAnswerAndRightChoice:', questionId)
-          await axios.post('/api/showAnswerAndRightChoice', {
-            questionId
-          })
-        },
         async showAnalysis (option) {
           await axios.post('/api/showAnalysis', {
             option
@@ -217,6 +219,14 @@
         let that = this
         boardRef.on('value', function (snapshot) {
           that.board = snapshot.val()
+        })
+        questionsRef.on('value', function (snapshot) {
+          that.questions = []
+          snapshot.forEach(function (snap) {
+            let question = snap.val()
+            question.id = snap.key()
+            that.questions.push(question)
+          })
         })
       }
     }

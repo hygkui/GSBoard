@@ -154,7 +154,6 @@ router.post('/recovery', function (req, res) {
  */
 router.post('/enterGame', function (req, res) {
   let ts = new Date()
-  console.log(req.query, req.body)
   let userId = req.body.userId
   console.log('enterGame', ts, userId)
   let userRef = wdRefs.users.child(userId)
@@ -233,7 +232,7 @@ router.post('/resetBoard', function (req, res) {
       analysis: null,
       answer: '',
       rightChoice: '',
-      startTime: new Date().toJSON(),
+      startTime: new Date('2018-02-03').toJSON(),
       userIds: {},
       tip: 'A new Game',
       question: null,
@@ -337,6 +336,9 @@ router.post('/endGame', (req, res) => {
     wdRefs.users.child(userId).update({
       gotTokens
     })
+  })
+  res.send({
+    code: 'success'
   })
 })
 

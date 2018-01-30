@@ -16,7 +16,7 @@ $ npm run dev
 
 # build for production and launch server
 $ npm start
-```
+```w
 
 For detailed explanation on how things work, checkout the [Nuxt.js docs](https://github.com/nuxt/nuxt.js).
 
