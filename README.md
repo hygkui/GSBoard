@@ -1,9 +1,10 @@
-# game server board
-API and board of the game.
+# game control board
 
-with the power of
-> Nuxt.js project
-> Wilddog
+> Control board of the game.
+
+
+![full page image](./static/page.png)
+
 
 ## Build Setup
 
@@ -16,10 +17,10 @@ $ npm run dev
 
 # build for production and launch server
 $ npm start
-```w
+```
 
-For detailed explanation on how things work, checkout the [Nuxt.js docs](https://github.com/nuxt/nuxt.js).
 
-## Backpack
-
-We use [backpack](https://github.com/palmerhq/backpack) to watch and build the application, so you can use the latest ES6 features (module syntax, async/await, etc.).
+With the power of
+- [Nuxt.js project](https://github.com/nuxt/nuxt.js)
+- [Wilddog](https://www.wilddog.com)
+- [backpack](https://github.com/palmerhq/backpack)
