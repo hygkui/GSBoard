@@ -8,12 +8,16 @@
         </h2>
         <div style="display: block;">
             <button @click="resetBoard()">重置游戏</button>
-
+            <br>
+            <input type="datetime" v-model="startTime" style="width: 300px;" placeholder="2018-02-11 21:00:00">
+            <button @click="setStartTime()">设置游戏开始时间</button>
+            <br>
+            <input type="datetime" v-model="totalReward" style="width: 300px;" placeholder="10000">
+            <button @click="setTotalReward()">设置悦币奖励总数</button>
+           
             <br>
 
-            
-
-            <input type="text" placeholder="input tip text" v-model="tipText">
+            <input type="text" placeholder="消息内容" v-model="tipText" style="width: 400px;">
             <button @click="setTip">发布公告</button>
             <br>
 
@@ -110,10 +114,24 @@
           tempChoice: '',
           rightChoices: [],
           questions: [],
-          selectedQuestions: []
+          selectedQuestions: [],
+          startTime: '',
+          totalReward: 10000
         }
       },
       methods: {
+        async setStartTime () {
+          await axios.post('/api/setStartTime', {
+            startTime: this.startTime
+          })
+          this.startTime = ''
+        },
+        async setTotalReward () {
+          await axios.post('/api/setTotalReward', {
+            totalReward: this.totalReward
+          })
+          this.startTime = ''
+        },
         async setTip () {
           if (this.tipText.length > 0) {
             await axios.post('/api/setTip', {
@@ -193,10 +211,16 @@
         async resetBoard () {
           await axios.post('/api/resetBoard')
           await axios.post('/api/enterGame', {
-            userId: 'xinnix'
+            userId: '张云来'
           })
           await axios.post('/api/enterGame', {
-            userId: 'zzh'
+            userId: '李志翔'
+          })
+          await axios.post('/api/enterGame', {
+            userId: '辛君野'
+          })
+          await axios.post('/api/enterGame', {
+            userId: '你的名字'
           })
         },
         async setQuestion (questionId) {

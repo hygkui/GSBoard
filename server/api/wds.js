@@ -20,20 +20,41 @@ wdRefs.board.on('value', function (snapshot) {
   boardInstance = snapshot.val()
 })
 
+router.post('/setStartTime', function (req, res) {
+  let startTime = new Date(req.body.startTime).toJSON()
+  wdRefs.board.update({
+    startTime
+  })
+})
+
+router.post('/setTotalReward', function (req, res) {
+  wdRefs.board.update({
+    totalRewardTokens: req.body.totalReward
+  })
+})
+
 /** check answer. 
   POST {questionId, choice}
 */
 router.post('/checkAnswer', function (req, res, next) {
   let { questionId, choice, userId } = req.body
   // var isChoiceRight = false
-  let question
+  let question, user
   wdRefs.project.child(questionId).once('value').then(function (snapshot) {
     console.info(snapshot.val())
     question = snapshot.val()
+    wdRefs.users.child(userId).once('value').then(function (snapshot) {
+      user = snapshot.val()
+      if (user.goodAnswerCount === undefined) {
+        user.goodAnswerCount = 0
+      }
+    })
+
     if (question.rightChoice.toString() === choice.toString()) {
       // if right
-      wdRefs.users.child(userId).update({ // die but ask recovery
-        submitAnswerState: 1
+      wdRefs.users.child(userId).update({
+        submitAnswerState: 1,
+        goodAnswerCount: user.goodAnswerCount + 1
       })
     } else {
       // if wrong
@@ -158,35 +179,54 @@ router.post('/enterGame', function (req, res) {
   console.log('enterGame', ts, userId)
   let userRef = wdRefs.users.child(userId)
   wdRefs.users.child(userId).once('value').then(function (snapshot) {
-    let user = snapshot.val()
     let board = boardInstance
-    console.log(user)
 
-    console.log(board.startTime, new Date(board.startTime), ts, new Date(board.startTime) > ts)
-    if (new Date(board.startTime) > ts) {
-      userRef.update({ // reset user
-        actionAskRecovery: false,
-        actionAskQuest: false,
-        isAlive: true,
-        hasRecovery: false,
-        gotTokens: 0,
-        submitAnswerState: -1
-      })
-      let userIds = board.userIds
-      if (userIds === undefined) {
-        userIds = []
-      }
-      if (userIds.indexOf(userId) === -1) {
-        userIds.push(userId)
-      }
-      wdRefs.board.update({
-        userIds,
-        aliveCount: userIds.length
-      })
-    } else {
-      // do nothing
-      console.error('game already started')
+    // console.log(board.startTime, new Date(board.startTime), ts, new Date(board.startTime) > ts)
+    // if (new Date(board.startTime) > ts) {
+    //   userRef.update({ // reset user
+    //     actionAskRecovery: false,
+    //     actionAskQuest: false,
+    //     isAlive: true,
+    //     hasRecovery: false,
+    //     gotTokens: 0,
+    //     submitAnswerState: -1
+    //   })
+    //   let userIds = board.userIds
+    //   if (userIds === undefined) {
+    //     userIds = []
+    //   }
+    //   if (userIds.indexOf(userId) === -1) {
+    //     userIds.push(userId)
+    //   }
+    //   wdRefs.board.update({
+    //     userIds,
+    //     aliveCount: userIds.length
+    //   })
+    // } else {
+    //   // do nothing
+    //   console.error('game already started')
+    // }
+
+    userRef.update({ // reset user
+      actionAskRecovery: false,
+      actionAskQuest: false,
+      isAlive: true,
+      hasRecovery: false,
+      gotTokens: 0,
+      submitAnswerState: -1,
+      goodAnswerCount: 0
+    })
+    let userIds = board.userIds
+    if (userIds === undefined) {
+      userIds = []
     }
+    if (userIds.indexOf(userId) === -1) {
+      userIds.push(userId)
+    }
+    wdRefs.board.update({
+      userIds,
+      aliveCount: userIds.length
+    })
   }).catch(console.error)
   res.json({
     code: 'success'
