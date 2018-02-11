@@ -39,22 +39,15 @@ router.post('/setTotalReward', function (req, res) {
 router.post('/checkAnswer', function (req, res, next) {
   let { questionId, choice, userId } = req.body
   // var isChoiceRight = false
-  let question, user
+  let question
   wdRefs.project.child(questionId).once('value').then(function (snapshot) {
     console.info(snapshot.val())
     question = snapshot.val()
-    wdRefs.users.child(userId).once('value').then(function (snapshot) {
-      user = snapshot.val()
-      if (user.goodAnswerCount === undefined) {
-        user.goodAnswerCount = 0
-      }
-    })
 
     if (question.rightChoice.toString() === choice.toString()) {
       // if right
       wdRefs.users.child(userId).update({
-        submitAnswerState: 1,
-        goodAnswerCount: user.goodAnswerCount + 1
+        submitAnswerState: 1
       })
     } else {
       // if wrong
