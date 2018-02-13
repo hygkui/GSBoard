@@ -14,7 +14,12 @@
             <br>
             <input type="datetime" v-model="totalReward" style="width: 300px;" placeholder="10000">
             <button @click="setTotalReward()">设置悦币奖励总数</button>
+            
+            <br>
+            <input type="text" v-model="newName" style="width: 300px;" placeholder="例：王沪宁">
+            <button @click="addNewName()">添加假人</button> <span v-if="board && board.userIds">  已加入{{ board.userIds.length }}人</span>
            
+            
             <br>
 
             <input type="text" placeholder="消息内容" v-model="tipText" style="width: 400px;">
@@ -116,7 +121,8 @@
           questions: [],
           selectedQuestions: [],
           startTime: '',
-          totalReward: 10000
+          totalReward: 10000,
+          newName: ''
         }
       },
       methods: {
@@ -125,6 +131,16 @@
             startTime: this.startTime
           })
           this.startTime = ''
+        },
+        async addNewName () {
+          if (this.board && this.board.userIds && this.board.userIds.length > 0 && this.board.userIds.indexOf(this.newName) !== -1) {
+            alert('名字重复或数据错误，请修改重试')
+          } else {
+            await axios.post('/api/enterGame', {
+              userId: this.newName
+            })
+            this.newName = ''
+          }
         },
         async setTotalReward () {
           await axios.post('/api/setTotalReward', {
@@ -210,18 +226,6 @@
         },
         async resetBoard () {
           await axios.post('/api/resetBoard')
-          await axios.post('/api/enterGame', {
-            userId: '张云来'
-          })
-          await axios.post('/api/enterGame', {
-            userId: '李志翔'
-          })
-          await axios.post('/api/enterGame', {
-            userId: '辛君野'
-          })
-          await axios.post('/api/enterGame', {
-            userId: '你的名字'
-          })
         },
         async setQuestion (questionId) {
           console.log('set question with id' + questionId)
